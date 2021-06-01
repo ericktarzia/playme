@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:playme/controllers/game.controller.dart';
 import 'package:playme/models/botao.model.dart';
+import 'package:playme/views/inicio.view.dart';
 import 'dart:math';
 import 'package:soundpool/soundpool.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
 class Play extends StatelessWidget {
+  GameController _gameController = Get.find();
   Soundpool pool;
   Random random;
   final aguarde = true.obs;
@@ -21,7 +24,7 @@ class Play extends StatelessWidget {
 
   var controleDaSequencia = 0.obs;
 
-  int somA, somB, somC, somD, somE, somF;
+  int somA, somB, somC, somD, somE, somF, somErro;
   List<Botao> _listaBotoes;
 
   var isLoading = true.obs;
@@ -57,6 +60,11 @@ class Play extends StatelessWidget {
     somF =
         await rootBundle.load("assets/sounds/f.mp3").then((ByteData soundData) {
       return pool.load(soundData);
+        });
+
+    somErro =
+        await rootBundle.load("assets/sounds/erro.mp3").then((ByteData soundData) {
+      return pool.load(soundData);
     });
 
     _listaBotoes = <Botao>[
@@ -64,11 +72,18 @@ class Play extends StatelessWidget {
       Botao(Colors.amberAccent, somB, 2),
       Botao(Colors.blueAccent, somC, 3),
       Botao(Colors.cyanAccent, somD, 4),
-      Botao(Colors.deepOrangeAccent, somE, 5),
-      Botao(Colors.purple, somF, 6),
+      
+      
     ];
     isLoading.value = false;
+    if(_gameController.dificuldade > 1){
+      _listaBotoes.add(Botao(Colors.deepOrangeAccent, somE, 5));
+      _listaBotoes.add(Botao(Colors.purple, somF, 6));
+      
+      }
     _gerarNumero();
+
+    
   }
 
   @override
@@ -84,16 +99,21 @@ class Play extends StatelessWidget {
                 )
               : Stack(
                   children: [
-                    Container(height: 50, child: Obx(() => Text(status.value))),
-                    Container(
-                        child: GridView.count(
-                            crossAxisCount: 2,
-                            children:
-                                List.generate(_listaBotoes.length, (index) {
-                              return Container(
-                                child: _botao(_listaBotoes[index]),
-                              );
-                            }))),
+                    Container(height: 50, child: Obx(() => Center(child: Text(status.value)))),
+                    Center(
+                      child: Container(
+                        margin: EdgeInsets.only(top:50),
+                        width: (kIsWeb) ? 300 : Get.width,
+                          child: GridView.count(
+                              crossAxisCount: 2,
+                              children:
+                                  List.generate(_listaBotoes.length, (index) {
+                                return Container(
+                                  
+                                  child: _botao(_listaBotoes[index]),
+                                );
+                              }))),
+                    ),
                   ],
                 )),
     );
@@ -125,7 +145,7 @@ class Play extends StatelessWidget {
   }
 
   _gerarNumero() {
-    int randomNumber = random.nextInt(5);
+    int randomNumber = random.nextInt((_gameController.dificuldade>1) ? 5 : 3);
     listaParaTocar.add(randomNumber + 1);
     _tocar(randomNumber + 1);
   }
@@ -171,11 +191,7 @@ class Play extends StatelessWidget {
 
       if (listEquals(sequencia, tocados)) {
         score++;
-        print("acertou");
-      } else {
-        print("errou");
-      }
-
+        
       status.value = "AGUARDE";
       toques.value = 0;
 
@@ -183,6 +199,19 @@ class Play extends StatelessWidget {
         tocados.value = [];
         _gerarNumero();
       });
+
+      } else {
+        _erro();
+      }
     }
   }
+
+  _erro(){
+    return Get.defaultDialog(
+      title: 'ERROU!',
+      onConfirm:() => Get.offAll(InicioView()),
+      onCancel: () => Get.offAll(InicioView()),
+      content: Center(child:Text("${score.value} pontos!"))
+    
+    );}
 }
