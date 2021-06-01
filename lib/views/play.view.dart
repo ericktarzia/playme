@@ -5,7 +5,6 @@ import 'package:playme/models/botao.model.dart';
 import 'dart:math';
 import 'package:soundpool/soundpool.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 
 class Play extends StatelessWidget {
   Soundpool pool;
