@@ -59,10 +59,11 @@ class Play extends StatelessWidget {
     somF =
         await rootBundle.load("assets/sounds/f.mp3").then((ByteData soundData) {
       return pool.load(soundData);
-        });
+    });
 
-    somErro =
-        await rootBundle.load("assets/sounds/erro.mp3").then((ByteData soundData) {
+    somErro = await rootBundle
+        .load("assets/sounds/erro.mp3")
+        .then((ByteData soundData) {
       return pool.load(soundData);
     });
 
@@ -71,18 +72,16 @@ class Play extends StatelessWidget {
       Botao(Colors.amberAccent, somB, 2),
       Botao(Colors.blueAccent, somC, 3),
       Botao(Colors.cyanAccent, somD, 4),
-      
-      
     ];
     isLoading.value = false;
-    if(_gameController.dificuldade > 1){
+    if (_gameController.dificuldade > 1 ||
+        _gameController.dificuldade.value == 0) {
       _listaBotoes.add(Botao(Colors.deepOrangeAccent, somE, 5));
       _listaBotoes.add(Botao(Colors.purple, somF, 6));
-      
-      }
-    _gerarNumero();
-
-    
+    }
+    _gameController.dificuldade.value == 0
+        ? passaAVez()
+        : Future.delayed(Duration(seconds: 3), _gerarNumero());
   }
 
   @override
@@ -98,20 +97,25 @@ class Play extends StatelessWidget {
                 )
               : Stack(
                   children: [
-                    Container(height: 50, child: Obx(() => Center(child: Text(status.value)))),
+                    Container(
+                        height: 50,
+                        child: Obx(() => Center(child: Text(status.value)))),
                     Center(
-                      child: Container(
-                        margin: EdgeInsets.only(top:50),
-                        width: (kIsWeb) ? 300 : Get.width,
-                          child: GridView.count(
-                              crossAxisCount: 2,
-                              children:
-                                  List.generate(_listaBotoes.length, (index) {
-                                return Container(
-                                  
-                                  child: _botao(_listaBotoes[index]),
-                                );
-                              }))),
+                      child: Padding(
+                        padding: const EdgeInsets.all(30),
+                        child: Container(
+                            // margin: EdgeInsets.only(top: 50),
+                            child: GridView.count(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 30,
+                                mainAxisSpacing: 30,
+                                children:
+                                    List.generate(_listaBotoes.length, (index) {
+                                  return Container(
+                                    child: _botao(_listaBotoes[index]),
+                                  );
+                                }))),
+                      ),
                     ),
                   ],
                 )),
@@ -133,10 +137,7 @@ class Play extends StatelessWidget {
                     toques.value++;
                     playBotao(botao, 0);
                   },
-            child: Container(
-              width: 100,
-              height: 100,
-            ),
+            child: Container(),
           ),
         ),
       ),
@@ -144,7 +145,8 @@ class Play extends StatelessWidget {
   }
 
   _gerarNumero() {
-    int randomNumber = random.nextInt((_gameController.dificuldade>1) ? 5 : 3);
+    int randomNumber =
+        random.nextInt((_gameController.dificuldade > 1) ? 5 : 3);
     listaParaTocar.add(randomNumber + 1);
     _tocar(randomNumber + 1);
   }
@@ -190,27 +192,29 @@ class Play extends StatelessWidget {
 
       if (listEquals(sequencia, tocados)) {
         score++;
-        
-      status.value = "AGUARDE";
-      toques.value = 0;
 
-      Future.delayed(Duration(seconds: 2), () {
-        tocados.value = [];
-        _gerarNumero();
-      });
+        status.value = "AGUARDE";
+        toques.value = 0;
 
+        Future.delayed(Duration(seconds: 2), () {
+          tocados.value = [];
+          if (_gameController.dificuldade.value == 3) {
+            _listaBotoes.shuffle();
+          }
+          _gerarNumero();
+        });
       } else {
         _erro();
       }
     }
   }
 
-  _erro(){
+  _erro() {
     return Get.defaultDialog(
-      title: 'ERROU!',
-      onConfirm:() => Get.offAll(InicioView()),
-      onCancel: () => Get.offAll(InicioView()),
-      content: Center(child:Text("${score.value} pontos!"))
-    
-    );}
+        title: 'ERROU!',
+        onConfirm: () => Get.offAll(InicioView()),
+        onCancel: () => Get.offAll(InicioView()),
+        barrierDismissible: false,
+        content: Center(child: Text("${score.value} pontos!")));
+  }
 }
